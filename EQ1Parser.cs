@@ -240,9 +240,12 @@ namespace ACT_Plugin
 			act.GetDateTimeFromLog = ParseEqDateTime;
 			act.LogFileFilter = "eqlog*.txt";
 			// Don't set LogFileParentFolderName — EQ1 has no per-character subfolders.
-			// Setting it to "Logs" causes ACT to construct a misleading char-folder path.
-			act.LogPathHasCharName = true;
-			act.CharacterFileNameRegex = new Regex(@"eqlog_(?<charname>[^_]+)_.+\.txt", RegexOptions.IgnoreCase);
+			// LogPathHasCharName must be false — setting it true makes ACT construct
+			// a character-subfolder path (EQ2-style), which produces garbage for EQ1.
+			act.LogPathHasCharName = false;
+			// Match the full path like the default EQ2 regex does (.+\\eq2log_...).
+			// ACT uses the first capturing group as the character name.
+			act.CharacterFileNameRegex = new Regex(@".+\\eqlog_([^_]+)_.+\.txt", RegexOptions.IgnoreCase);
 			act.ZoneChangeRegex = new Regex(
 				@"^\[.{24}\] You have entered (?<zone>.+?)\.\s*$", RegexOptions.Compiled);
 		}
