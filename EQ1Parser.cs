@@ -382,6 +382,13 @@ namespace ACT_Plugin
 			"gore","maul","rend","shoot","slice","smash","stab","sting","sweep","hit","gnaw","chomp"
 		};
 
+		// Auto-attack verbs: only these show under "Auto-Attack" in ACT.
+		// Everything else is a skill (NonMelee).
+		private static readonly HashSet<string> AutoAttackVerbs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+		{
+			"slash","slashes","pierce","pierces","crush","crushes"
+		};
+
 		// 3rd-person verbs that appear in "<mob> hits YOU for N..." and "<mob> tries to hit YOU, but ..."
 		// These map back to a base damage-type label.
 		private static readonly HashSet<string> NpcMelee3pVerbs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -940,7 +947,8 @@ namespace ACT_Plugin
 			bool crit; string special; ReadSpecial(m, out crit, out special);
 			if (attacker == victim) return true; // sanity
 			if (!ActGlobals.oFormActMain.SetEncounter(t, attacker, victim)) return true;
-			ActGlobals.oFormActMain.AddCombatAction((int)SwingTypeEnum.Melee, crit, special,
+			var swingType = AutoAttackVerbs.Contains(verb) ? (int)SwingTypeEnum.Melee : (int)SwingTypeEnum.NonMelee;
+			ActGlobals.oFormActMain.AddCombatAction(swingType, crit, special,
 				attacker, CapFirst(verb), new Dnum(n), t, gts, victim, DamageTypeForVerb(verb));
 			return true;
 		}
@@ -954,7 +962,8 @@ namespace ACT_Plugin
 			if (attacker == victim) return true;
 			if (!ActGlobals.oFormActMain.SetEncounter(t, attacker, victim)) return true;
 			var baseVerb = NormalizeVerb(verb);
-			ActGlobals.oFormActMain.AddCombatAction((int)SwingTypeEnum.Melee, crit, special,
+			var swingType = AutoAttackVerbs.Contains(verb) ? (int)SwingTypeEnum.Melee : (int)SwingTypeEnum.NonMelee;
+			ActGlobals.oFormActMain.AddCombatAction(swingType, crit, special,
 				attacker, CapFirst(baseVerb), new Dnum(n), t, gts, victim, DamageTypeForVerb(verb));
 			return true;
 		}
@@ -1015,7 +1024,8 @@ namespace ACT_Plugin
 
 			if (attacker == victim) return true;
 			if (!ActGlobals.oFormActMain.SetEncounter(t, attacker, victim)) return true;
-			ActGlobals.oFormActMain.AddCombatAction((int)SwingTypeEnum.Melee, false, special,
+			var swingType = AutoAttackVerbs.Contains(verb) ? (int)SwingTypeEnum.Melee : (int)SwingTypeEnum.NonMelee;
+			ActGlobals.oFormActMain.AddCombatAction(swingType, false, special,
 				attacker, CapFirst(verb), failType, t, gts, victim, damageType);
 			return true;
 		}
@@ -1034,7 +1044,8 @@ namespace ACT_Plugin
 
 			if (attacker == victim) return true;
 			if (!ActGlobals.oFormActMain.SetEncounter(t, attacker, victim)) return true;
-			ActGlobals.oFormActMain.AddCombatAction((int)SwingTypeEnum.Melee, false, special,
+			var swingType = AutoAttackVerbs.Contains(verb) ? (int)SwingTypeEnum.Melee : (int)SwingTypeEnum.NonMelee;
+			ActGlobals.oFormActMain.AddCombatAction(swingType, false, special,
 				attacker, CapFirst(NormalizeVerb(verb)), failType, t, gts, victim, damageType);
 			return true;
 		}
