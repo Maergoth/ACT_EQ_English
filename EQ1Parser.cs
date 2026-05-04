@@ -113,6 +113,11 @@ namespace ACT_Plugin
 		private readonly string settingsFile = Path.Combine(
 			ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\ACT_Plugin_EQ1.config.xml");
 
+		// ── Plugin Update ──────────────────────────────────────────────────────────
+		// Set this to your plugin's registered ID on advancedcombattracker.com.
+		// Once registered, replace 0 with the actual integer ID.
+		private const int PluginId = 0;
+
 		// ACT environment values we change so we can restore them on unload.
 		private int prevTimeStampLen;
 		private FormActMain.DateTimeLogParser prevDateParser;
@@ -139,6 +144,10 @@ namespace ACT_Plugin
 
 			ActGlobals.oFormActMain.BeforeLogLineRead += OnBeforeLogLineRead;
 			ActGlobals.oFormActMain.LogFileChanged += OnLogFileChanged;
+			ActGlobals.oFormActMain.UpdateCheckClicked += OnUpdateCheckClicked;
+
+			if (PluginId > 0)
+				CheckForUpdate();
 
 			lblStatus.Text = "EQ1 Parser started.";
 		}
@@ -149,6 +158,7 @@ namespace ACT_Plugin
 			{
 				ActGlobals.oFormActMain.BeforeLogLineRead -= OnBeforeLogLineRead;
 				ActGlobals.oFormActMain.LogFileChanged -= OnLogFileChanged;
+				ActGlobals.oFormActMain.UpdateCheckClicked -= OnUpdateCheckClicked;
 				RestoreEnvironment();
 				SaveSettings();
 			}
@@ -157,6 +167,55 @@ namespace ACT_Plugin
 				ActGlobals.oFormActMain.WriteExceptionLog(ex, "EQ1Parser DeInit");
 			}
 			if (lblStatus != null) lblStatus.Text = "EQ1 Parser exited.";
+		}
+		#endregion
+
+		#region Plugin Update
+		private void OnUpdateCheckClicked()
+		{
+			CheckForUpdate();
+		}
+
+		private void CheckForUpdate()
+		{
+			if (PluginId <= 0) return;
+			try
+			{
+				var act = ActGlobals.oFormActMain;
+				DateTime localDate = act.PluginGetSelfDateUtc(this);
+				DateTime remoteDate = act.PluginGetRemoteDateUtc(PluginId);
+
+				if (remoteDate > localDate)
+				{
+					var result = MessageBox.Show(
+						"An update for the EQ1 Parser plugin is available.\n\n" +
+						$"Local: {localDate:yyyy-MM-dd}\nRemote: {remoteDate:yyyy-MM-dd}\n\n" +
+						"Download and update now?",
+						"EQ1 Parser Update",
+						MessageBoxButtons.YesNo,
+						MessageBoxIcon.Question);
+
+					if (result == DialogResult.Yes)
+					{
+						FileInfo updatedFile = act.PluginDownload(PluginId);
+						ActPluginData selfData = act.PluginGetSelfData(this);
+						string currentPath = selfData.pluginFile.FullName;
+
+						// Replace the running DLL with the downloaded one.
+						File.Copy(updatedFile.FullName, currentPath, true);
+
+						MessageBox.Show(
+							"Plugin updated. Please restart ACT to load the new version.",
+							"EQ1 Parser Update",
+							MessageBoxButtons.OK,
+							MessageBoxIcon.Information);
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				ActGlobals.oFormActMain.WriteExceptionLog(ex, "EQ1Parser UpdateCheck");
+			}
 		}
 		#endregion
 
